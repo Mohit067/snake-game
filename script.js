@@ -10,6 +10,19 @@ document.addEventListener('DOMContentLoaded', function() {
     let dx = cellSize;
     let dy = 0;
 
+    let intervalId;
+    let gameSpeed = 200;
+    function moveFood(){
+        let newX, newY;
+
+        do {
+            newX = Math.floor(Math.random() * 30) * cellSize;
+            newY = Math.floor(Math.random() * 30) * cellSize;
+        } while(snake.some(snakeCell => snakeCell.r === newX && snakeCell.c === newY));
+        
+        food = {r: newX, c: newY};
+    }
+
     function updateSnake(){
         const newHead = {r: snake[0].r + dx, c: snake[0].c + dy};
         snake.unshift(newHead);
@@ -17,7 +30,14 @@ document.addEventListener('DOMContentLoaded', function() {
         //check collision with food
         if(newHead.r === food.r && newHead.c === food.c){
             score += 10;
+            moveFood();
+            if(gameSpeed > 50){
+                clearInterval(intervalId);
+                gameSpeed -= 10;
+                gameLoop();
+            }
         }
+
         else {
             snake.pop();//remove tail 
         }
@@ -27,9 +47,9 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log("key pressed", e)
         const isGoingDown = dy === cellSize;
         const isGoingup = dy === -cellSize;
-        const isGoingRight = dy === cellSize;
-        const isGoingLeft = dy === -cellSize;
-        if(e.key ==='Arrowup' && !isGoingDown){
+        const isGoingRight = dx === cellSize;
+        const isGoingLeft = dx === -cellSize;
+        if(e.key ==='ArrowUp' && !isGoingDown){
             dx = 0;
             dy = -cellSize;
         }
@@ -42,8 +62,9 @@ document.addEventListener('DOMContentLoaded', function() {
             dy = 0;
         }
         else if(e.key ==='ArrowRight' && !isGoingLeft){
-            dx = 0;
-            dy = cellSize;
+            dx = cellSize;
+            dy = 0;
+            
         }
     }
     
@@ -68,11 +89,34 @@ document.addEventListener('DOMContentLoaded', function() {
         gameArena.appendChild(foodElement);
     }
 
+    function isGameOver(){
+        //snake collision
+        for(let i=1; i<snake.length; i++){
+            if(snake[0].r === snake[i].r && snake[0].c === snake[i].c){
+                return true;
+            }
+        }
+        // wall collision
+        const hitLeftWall = snake[0].r < 0;
+        const hitRightWall = snake[0].r > ArenaSize - cellSize;
+        const hitTopWall = snake[0].c < 0;
+        const hitDownWall = snake[0].c > ArenaSize - cellSize;
+        return hitLeftWall || hitRightWall || hitTopWall || hitDownWall;
+    }
+
     function gameLoop(){
-        setInterval(() => {
+            
+        intervalId = setInterval(() => {
+            if(isGameOver()){
+                clearInterval(intervalId);
+                startGame = false;
+                alert('game Over' + '\n' + 'Your Score' + score);
+                return;
+            }
             updateSnake();
             drawFoodAndSnake();
-        },200)
+            drawScoreBoard();
+        },gameSpeed)
     }
 
     function runGame(){
@@ -83,6 +127,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function drawScoreBoard(){
+        const scoreBoard = document.getElementById('score-board');
+        scoreBoard.textContent = `Score: ${score}`;
+    }
 
     function initiateGame(){
         const scoreBoard = document.createElement('div');
